@@ -20,8 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'docker'
-include Docker
+#require 'docker'
+#include Docker
 
 # Action Class for deleting server entries.
 class HADockerConfig_Delete < HADockerConfig_Base
@@ -31,7 +31,7 @@ class HADockerConfig_Delete < HADockerConfig_Base
 	# +b+::	base url 
 	def initialize(l,s,b = nil)	
 		super(l,s)
-		@base_url = b || 'http://localhost:4243'
+		@base_url = b || '127.0.0.1:6379'
 	end
 
 	# we expect @input_data to be ID[,ID,...], so split and parse it into @data

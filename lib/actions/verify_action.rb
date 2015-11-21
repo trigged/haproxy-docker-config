@@ -31,7 +31,7 @@ class HADockerConfig_Verify < HADockerConfig_Base
 	# +b+::		base url
 	def initialize(l,s,b=nil)	
 		super(l,s)
-		@base_url = b || 'http://localhost:4243'
+		@base_url = b || '127.0.0.1:6379'
 	end
 
 	def parse
@@ -41,24 +41,24 @@ class HADockerConfig_Verify < HADockerConfig_Base
 	def process
 		# query a map of all running docker instances, together with their 
 		# port forwardings
-		config = { :base_url => @base_url }
-		docker = API.new config
-		
-		begin
-			current_docker_forwarding_state = get_docker_port_mapping_state(docker)
-		rescue => e
-			raise "Unable to get port mapping state from docker api, #{e.message}" 
-		end
-
-		# query servers in given listener
-		haproxy_servers = Haproxy_Augeas.get_server_of_listener @listener
-
-		# match those.
-		res = {}
-		haproxy_servers.each do |augeas_key, server_entry|
-			server_id = (server_entry.split(" "))[0]
-			res.store server_id, current_docker_forwarding_state[server_id]
-		end
+		# config = { :base_url => @base_url }
+		# docker = API.new config
+		#
+		# begin
+		# 	current_docker_forwarding_state = get_docker_port_mapping_state(docker)
+		# rescue => e
+		# 	raise "Unable to get port mapping state from docker api, #{e.message}"
+		# end
+    #
+		# # query servers in given listener
+		# haproxy_servers = Haproxy_Augeas.get_server_of_listener @listener
+    #
+		# # match those.
+		# res = {}
+		# haproxy_servers.each do |augeas_key, server_entry|
+		# 	server_id = (server_entry.split(" "))[0]
+		# 	res.store server_id, current_docker_forwarding_state[server_id]
+		# end
 			
 		return res
 	end

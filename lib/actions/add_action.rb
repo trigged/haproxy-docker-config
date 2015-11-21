@@ -20,8 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'docker'
-include Docker
+#require 'docker'
+#include Docker
 
 # Class for Adding server entries to he haproxy configuration
 #
@@ -32,8 +32,8 @@ class HADockerConfig_Add < HADockerConfig_Base
 	# +b+::	base url 
 	def initialize(l,s,b = nil)
 		super(l,s)
-		@base_url = b || 'http://127.0.0.1:4243'
-		@local_ip = @base_url.sub(%r{\Ahttps?://},'').sub(/:\d+\Z/,'')
+		@base_url = b || '127.0.0.1:6379'
+		@local_ip = @base_url.sub(/:\d+\Z/,'')
 	end
 
 	# we expect @input_data to be ID:[PORT][,ID:[:PORT]], so split and parse it into @data
@@ -42,7 +42,7 @@ class HADockerConfig_Add < HADockerConfig_Base
 		@input_data.split(",").each do |id_port_pair|
 			a = id_port_pair.split(":") | []
 			# no port? add 0 to indicate that we should find out ourselves
-			a << "0" if a.size < 2
+        raise "No port error =#{a}" unless a && a.size < 2
 			@data << [ a[0],a[1].to_i ]
 		end
 	end
@@ -56,42 +56,46 @@ class HADockerConfig_Add < HADockerConfig_Base
 
 		# query a map of all running docker instances, together with their
 		# port forwardings
-		config = { :base_url => @base_url }
-		docker = API.new config
-
-		begin
-			current_docker_forwarding_state = get_docker_port_mapping_state(docker)
-		rescue => e
-			raise "Unable to get port mapping state from docker api, #{e.message}"
-		end
+		# config = { :base_url => @base_url }
+		# docker = API.new config
+		# begin
+		# 	current_docker_forwarding_state = get_docker_port_mapping_state(docker)
+		# rescue => e
+		# 	raise "Unable to get port mapping state from docker api, #{e.message}"
+		# end
 
 		res = {}
 		# for each instance to be balanced,
-		@data.each do |instance_id, source_port|
+		@data.each do |instance_ip, source_port|
 			# check that this is running by looking it up in our map
-			state = current_docker_forwarding_state[instance_id]
-			raise "No running container found for id=#{instance_id}"  unless state
+			# state = current_docker_forwarding_state[instance_id]
+			# raise "No running container found for id=#{instance_id}"  unless state
+      #
+			# # grab out mappings and local ip address
+			# port_mappings = state["PortMapping"] || {}
+			# ip_address = state["IPAddress"]
+      #
+			# raise "Unable to look up port mapping for id=#{instance_id}" unless port_mappings && ip_address
+      #
+			# # get the public facing port according to source_port
+			# if source_port > 0
+			# 	# source port is given, so look up the public facing port
+			# 	public_port = port_mappings[source_port.to_s]
+			# else
+			# 	# source port is not given, grab the first one (if there is one)
+			# 	public_port = port_mappings.first[1] if port_mappings.size > 0
+			# end
+			# # no port? -> get out.
+			# raise "Did not find port forwarding for id=#{instance_id}, port=#{source_port}" unless public_port
+      #
+			# #
+			# res.store instance_id, { :port => public_port, :ip => @local_ip, :id => instance_id }
 
-			# grab out mappings and local ip address
-			port_mappings = state["PortMapping"] || {}
-			ip_address = state["IPAddress"]
 
-			raise "Unable to look up port mapping for id=#{instance_id}" unless port_mappings && ip_address
-
-			# get the public facing port according to source_port
-			if source_port > 0
-				# source port is given, so look up the public facing port
-				public_port = port_mappings[source_port.to_s]
-			else
-				# source port is not given, grab the first one (if there is one)
-				public_port = port_mappings.first[1] if port_mappings.size > 0
-			end
-			# no port? -> get out.
-			raise "Did not find port forwarding for id=#{instance_id}, port=#{source_port}" unless public_port
-		
-			# 
-			res.store instance_id, { :port => public_port, :ip => @local_ip, :id => instance_id }
-		end		
+      # @todo check ip:port has work
+      raise "Unable to look up port mapping for id=#{instance_ip}" unless instance_ip && source_port
+      res.store instance_ip, { :port => source_port, :ip => instance_ip, :id => instance_ip+source_port }
+		end
 
 		# initiate forwardings..
 		# res has the structure of what ensure_ expects:

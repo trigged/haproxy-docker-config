@@ -54,6 +54,10 @@ optparse = OptionParser.new do |opts|
     options[:listener] = s
   end
 
+  opts.on('-redis', '--redis LISTENER', 'Perform actions on LISTENER listen service. Mandatory') do |s|
+    options[:base_url] = s
+  end
+
   opts.on('--docker-url IPADDRESS[:PORT]', 'URL (and optional port) for the Docker host where docker -d is running. Default http://localhost:4243') do |uri|
     options[:base_url] = uri
   end
